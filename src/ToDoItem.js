@@ -6,49 +6,36 @@ function ToDoItem({task, onToggle, onDelete, onEdit}) {
 
     const handleEdit = () => {
         // Если режим редактирования включён и есть текст, сохраняем изменения
-        if (isEditing && newTitle.trim()) {
-            onEdit(task.id, newTitle);
-        }
-        setIsEditing(!isEditing);
+        setIsEditing(true);
     };
 
-    const handleChange = (e) => {
-        setNewTitle(e.target.value);
-    };
-
-    const handleCancel = () => {
-        setNewTitle(task.title);
+    const handleSave = () => {
+        onEdit(task.id, newTitle);
         setIsEditing(false);
-    };
+    }
+
 
     return (
-        <div className="todo-item">
-            <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => onToggle(task.id)}
-            />
+        <li className={task.completed ? "completed" : ""}>
             {isEditing ? (
                 <>
                     <input
                         type="text"
                         value={newTitle}
-                        onChange={handleChange}
-                        autoFocus
+                        onChange={(e) => setNewTitle(e.target.value)}
                     />
-                    <button onClick={handleEdit}>Сохранить</button>
-                    <button onClick={handleCancel}>Отменить</button>
+                    <button onClick={handleSave}>Сохранить</button>
                 </>
             ) : (
                 <>
-          <span className={task.completed ? 'completed' : ''}>
+          <span onClick={() => onToggle(task.id)}>
             {task.title}
           </span>
                     <button onClick={handleEdit}>Редактировать</button>
                 </>
             )}
             <button onClick={() => onDelete(task.id)}>Удалить</button>
-        </div>
+        </li>
     );
 }
 

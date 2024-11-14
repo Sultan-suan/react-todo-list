@@ -1,23 +1,142 @@
 .App {
     font-family: Arial, sans-serif;
+    margin: 0;
     padding: 20px;
+    background-color: #f0f0f0;
+    text-align: center;
+}
+ul {
+    list-style-type: none;
+    padding: 0;
 }
 
-.filters button {
-    margin: 5px;
+li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 5px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
 }
 
-form input[type="text"] {
-    padding: 5px;
+li.completed span {
+    text-decoration: line-through;
+    color: #888;
+}
+
+input[type="text"] {
     margin-right: 10px;
+    padding: 5px
 }
 
-form input[type="datetime-local"] {
-    padding: 5px;
-    margin-right: 10px;
-}
-
-form button {
+button {
+    margin-left: 5px;
     padding: 5px 10px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 3px;
     cursor: pointer;
 }
+
+button:hover {
+    background-color: #45a049;
+}
+
+button:active {
+    background-color: #3e8e41;
+}
+
+.sort-filters {
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+}
+
+.sort-filters label {
+    margin-right: 10px;
+}
+
+.sort-filters select {
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.filters {
+    margin: 20px 0;
+}
+
+.filters.button {
+    margin-right: 10px;
+    padding: 5px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.filters button:hover {
+    background-color: #0056b3;
+}
+
+.filters button:focus {
+    outline: none;
+}
+
+.search-bar {
+    margin: 15px 0;
+    padding: 10px;
+    width: 100%;
+    max-width: 400px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.clear-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.clear-button:hover {
+    background-color: #c82333;
+}
+
+.task-enter {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.task-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 300ms ease-in-out;
+}
+
+.task-exit {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.task-exit-active {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 300ms ease-in-out;
+}
+
+
+
+
