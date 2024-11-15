@@ -2,18 +2,24 @@ import React, {useState} from 'react';
 
 function AddTaskForm({onAdd}) {
     const [title, setTitle] = useState('');
-    const [deadline, setDeadline] = useState('');
+    const [deadlineDate, setDeadlineDate] = useState('');
+    const [deadlineTime, setDeadlineTime] = useState('');
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (title.trim()) {
-            onAdd(title, deadline);
-            setTitle('');
-            setDeadline('');
-        }
+        if (!title) return;
+        const deadline = deadlineDate && deadlineTime
+            ? new Date(`${deadlineDate}T${deadlineTime}`)
+            : null;
+
+        onAdd(title, deadline);
+        setTitle('');
+        setDeadlineDate('');
+        setDeadlineTime('');
+
     };
     return (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="add-task-form">
             <input
                 type="text"
                 value={title}
@@ -21,9 +27,14 @@ function AddTaskForm({onAdd}) {
                 placeholder="Введите задачу..."
             />
             <input
-                type="datetime-local"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
+                type="date"
+                value={deadlineDate}
+                onChange={(e) => setDeadlineDate(e.target.value)}
+            />
+            <input
+                type="time"
+                value={deadlineTime}
+                onChange={(e) => setDeadlineTime(e.target.value)}
             />
             <button type="submit">Добавить задачу</button>
         </form>

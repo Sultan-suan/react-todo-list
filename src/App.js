@@ -1,15 +1,26 @@
 import React, {useState, useEffect} from 'react';
 import ToDoList from "./ToDoList";
 import AddTaskForm from "./AddTaskForm";
-import './App.css'
-
+import './App.css';
 
 function App() {
     const [tasks, setTasks] = useState([]);
-    const [filter, setFilter] = useState("all")
+    const [filter, setFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [sortOrder, setSortOrder] = useState("newest");
+    const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
 
+    // Сохранение и применение темы
+    useEffect(() => {
+        localStorage.setItem("theme", theme);
+        document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    };
+
+    // Загрузка задач из localStorage при первой загрузке
     useEffect(() => {
         const storedTasks = localStorage.getItem('tasks');
         if (storedTasks) {
@@ -22,45 +33,64 @@ function App() {
         }
     }, []);
 
+    // Сохранение задач в localStorage при изменении
     useEffect(() => {
-        if (tasks.length > 0) {
+
+        if(tasks.length > 0) {
             localStorage.setItem('tasks', JSON.stringify(tasks));
+        } else {
+            localStorage.removeItem('tasks')
         }
+
     }, [tasks]);
 
+    // Уведомления
     useEffect(() => {
         if (Notification.permission !== 'granted') {
-            Notification.requestPermission();
+            Notification.requestPermission().then(permission => {
+                if(permission === 'granted') {
+                    console.log("Права на уведомление предоставлены")
+                } else {
+                    console.log("Права на уведомление отключены")
+                }
+            });
         }
     }, []);
 
     const sendNotification = (task) => {
         if (Notification.permission === 'granted') {
             new Notification(`Дедлайн: ${task.title}`, {
-                body: `Время истекло для задачи ${task.title}`
+                body: `Время истекло для задачи "${task.title}"`,
             });
+        } else {
+            console.log("Уведомление не разрешены");
         }
     };
 
     useEffect(() => {
-        const checkDeadlines = () => {
-            const now = new Date();
-            setTasks((prevTasks) =>
-                prevTasks.map((task) => {
-                    if (task.deadline && !task.notified) {
-                        const taskDeadline = new Date(task.deadline)
-                        if (taskDeadline <= now) {
-                            sendNotification(task);
-                            return {...task, notified: true};
-                        }
-                    }
-                    return task;
-                })
-            );
-        }
-        const interval = setInterval(checkDeadlines, 10000);
-        return () => clearInterval(interval);
-    }, []);
+        const now = new Date();
+
+        tasks.forEach((task) => {
+            if (task.deadline && !task.notified) {
+                const taskDeadline = new Date(task.deadline);
+                const timeToNotify = taskDeadline - now;
+
+                if (timeToNotify > 0) {
+                    console.log(`Планируем уведомление для задачи "${task.title}" через ${timeToNotify / 1000} секунд`);
+                    const timer = setTimeout(() => {
+                        sendNotification(task);
+                        setTasks((prevTasks) =>
+                            prevTasks.map((t) =>
+                                t.id === task.id ? {...t, notified: true} : t
+                            )
+                        );
+                    }, timeToNotify);
+                    return () => clearTimeout(timer);
+                }
+            }
+        });
+
+    }, [tasks]);
 
 
     const addTask = (title, deadline) => {
@@ -68,44 +98,46 @@ function App() {
             id: Date.now(),
             title,
             completed: false,
-            deadline,
+            deadline: deadline ? deadline.toISOString() : null,
             notified: false,
             createdAt: new Date().toISOString(),
         };
-        setTasks([...tasks, newTask]);
+        setTasks((prevTasks) => [...prevTasks, newTask]);
     };
 
     const toggleTask = (id) => {
-        setTasks(
-            tasks.map(task =>
+        setTasks((prevTasks) =>
+            prevTasks.map((task) =>
                 task.id === id ? {...task, completed: !task.completed} : task
             )
         );
     };
 
     const deleteTask = (id) => {
-        setTasks(tasks.filter(task => task.id !== id));
+        setTasks((prevTasks) =>
+            prevTasks.filter((task) => task.id !== id)
+        );
     };
 
     const editTask = (id, newTitle) => {
-        setTasks(prevTasks =>
-            prevTasks.map(task =>
+        setTasks((prevTasks) =>
+            prevTasks.map((task) =>
                 task.id === id ? {...task, title: newTitle} : task
             )
         );
-        // console.log("Редактирование задачи:", id, newTitle);
     };
 
     const clearCompletedTasks = () => {
-        setTasks(tasks.filter(task => !task.completed));
-    }
+        setTasks((prevTasks) => prevTasks.filter((task) => !task.completed));
+    };
 
-    const filteredTasks = tasks.filter(task => {
-        if (filter === 'active') return !task.completed;
-        if (filter === 'completed') return task.completed
-        return true
-    })
-        .filter(task => task.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filteredTasks = tasks
+        .filter((task) => {
+            if (filter === 'active') return !task.completed;
+            if (filter === 'completed') return task.completed;
+            return true;
+        })
+        .filter((task) => task.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const sortedTasks = filteredTasks.sort((a, b) => {
         if (sortOrder === 'newest') {
@@ -113,7 +145,7 @@ function App() {
         } else if (sortOrder === 'oldest') {
             return new Date(a.createdAt) - new Date(b.createdAt);
         } else if (sortOrder === 'completed') {
-            return a.completed - b.completed
+            return a.completed - b.completed;
         }
         return 0;
     });
@@ -121,6 +153,10 @@ function App() {
     return (
         <div className="App">
             <h1>React To-Do-List с Уведомлениями</h1>
+            <button onClick={toggleTheme}>
+                {theme === 'light' ? "Тёмная тема" : "Светлая тема"}
+            </button>
+
             <AddTaskForm onAdd={addTask}/>
 
             <input
@@ -145,17 +181,14 @@ function App() {
                 <button onClick={() => setFilter("active")}>Активные</button>
                 <button onClick={() => setFilter("completed")}>Выполненные</button>
             </div>
-            <ToDoList
-                tasks={sortedTasks}
-                onToggle={toggleTask}
-                onDelete={deleteTask}
-                onEdit={editTask}
-            />
 
-            <button onClick={clearCompletedTasks} className="clear-button">Очистить выполненные задачи</button>
+            <ToDoList tasks={sortedTasks} onToggle={toggleTask} onDelete={deleteTask} onEdit={editTask}/>
+
+            <button onClick={clearCompletedTasks} className="clear-button">
+                Очистить выполненные задачи
+            </button>
         </div>
-
     );
 }
 
-export default App
+export default App;
