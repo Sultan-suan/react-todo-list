@@ -186,4 +186,20 @@ button:hover {
     color: #ddd;
 }
 
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    max-width: 300px;
+    margin: 20px auto
+}
+
+.auth-form input, .auth-form button {
+    margin: 5px 0;
+    padding: 10px;
+}
+
+.auth-form h2 {
+    text-align: center;
+}
+
 
