@@ -1,9 +1,12 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import ToDoList from "./ToDoList";
 import AddTaskForm from "./AddTaskForm";
 import './App.css';
+import {UserContext, UserProvider} from "./UserContext";
+import AuthForm from "./AuthForm";
 
-function App() {
+function AppContent() {
+    const [user, login, logout] = useContext(UserContext);
     const [tasks, setTasks] = useState([]);
     const [filter, setFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
@@ -12,17 +15,17 @@ function App() {
 
     // Сохранение и применение темы
     useEffect(() => {
-        localStorage.setItem("theme", theme);
         document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
     }, [theme]);
 
     const toggleTheme = () => {
         setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+        localStorage.setItem("theme", theme === "light" ? "dark" : "light");
     };
 
     // Загрузка задач из localStorage при первой загрузке
     useEffect(() => {
-        const storedTasks = localStorage.getItem('tasks');
+        const storedTasks = localStorage.getItem(`${user}-tasks`);
         if (storedTasks) {
             try {
                 setTasks(JSON.parse(storedTasks));
@@ -31,29 +34,25 @@ function App() {
                 localStorage.removeItem('tasks');
             }
         }
-    }, []);
+    }, [user]);
 
     // Сохранение задач в localStorage при изменении
     useEffect(() => {
 
-        if(tasks.length > 0) {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+        if (tasks.length > 0) {
+            localStorage.setItem(`${user}-tasks`, JSON.stringify(tasks));
         } else {
-            localStorage.removeItem('tasks')
+            localStorage.removeItem(`${user}-tasks`)
         }
 
-    }, [tasks]);
+    }, [tasks, user]);
+
+    //
 
     // Уведомления
     useEffect(() => {
-        if (Notification.permission !== 'granted') {
-            Notification.requestPermission().then(permission => {
-                if(permission === 'granted') {
-                    console.log("Права на уведомление предоставлены")
-                } else {
-                    console.log("Права на уведомление отключены")
-                }
-            });
+        if('Notification' in window && Notification.permission !== 'granted') {
+            Notification.requestPermission().then(permission => {})
         }
     }, []);
 
@@ -62,10 +61,9 @@ function App() {
             new Notification(`Дедлайн: ${task.title}`, {
                 body: `Время истекло для задачи "${task.title}"`,
             });
-        } else {
-            console.log("Уведомление не разрешены");
         }
     };
+
 
     useEffect(() => {
         const now = new Date();
@@ -85,11 +83,12 @@ function App() {
                             )
                         );
                     }, timeToNotify);
+
+                    // Здесь нужно возвращать функцию очистки
                     return () => clearTimeout(timer);
                 }
             }
         });
-
     }, [tasks]);
 
 
@@ -152,42 +151,59 @@ function App() {
 
     return (
         <div className="App">
-            <h1>React To-Do-List с Уведомлениями</h1>
-            <button onClick={toggleTheme}>
-                {theme === 'light' ? "Тёмная тема" : "Светлая тема"}
-            </button>
+            {user ? (
+                <>
+                    <h1>React To-Do-List с Уведомлениями</h1>
+                    <button onClick={toggleTheme}>
+                        {theme === 'light' ? "Тёмная тема" : "Светлая тема"}
+                    </button>
+                    <button onClick={logout}>Выйти</button>
 
-            <AddTaskForm onAdd={addTask}/>
+                    <AddTaskForm onAdd={addTask}/>
 
-            <input
-                type="text"
-                placeholder="Поиск задач..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-bar"
-            />
+                    <input
+                        type="text"
+                        placeholder="Поиск задач..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="search-bar"
+                    />
 
-            <div className="sort-filters">
-                <label>Сортировать по:</label>
-                <select onChange={(e) => setSortOrder(e.target.value)} value={sortOrder}>
-                    <option value="newest">Сначала новые</option>
-                    <option value="oldest">Сначала старые</option>
-                    <option value="completed">По статусу</option>
-                </select>
-            </div>
+                    <div className="sort-filters">
+                        <label>Сортировать по:</label>
+                        <select onChange={(e) => setSortOrder(e.target.value)} value={sortOrder}>
+                            <option value="newest">Сначала новые</option>
+                            <option value="oldest">Сначала старые</option>
+                            <option value="completed">По статусу</option>
+                        </select>
+                    </div>
 
-            <div className="filters">
-                <button onClick={() => setFilter("all")}>Все</button>
-                <button onClick={() => setFilter("active")}>Активные</button>
-                <button onClick={() => setFilter("completed")}>Выполненные</button>
-            </div>
+                    <div className="filters">
+                        <button onClick={() => setFilter("all")}>Все</button>
+                        <button onClick={() => setFilter("active")}>Активные</button>
+                        <button onClick={() => setFilter("completed")}>Выполненные</button>
+                    </div>
 
-            <ToDoList tasks={sortedTasks} onToggle={toggleTask} onDelete={deleteTask} onEdit={editTask}/>
+                    <ToDoList tasks={sortedTasks} onToggle={toggleTask} onDelete={deleteTask} onEdit={editTask}/>
 
-            <button onClick={clearCompletedTasks} className="clear-button">
-                Очистить выполненные задачи
-            </button>
+                    <button onClick={clearCompletedTasks} className="clear-button">
+                        Очистить выполненные задачи
+                    </button>
+                </>
+            ) : (
+                <AuthForm/>
+            )}
         </div>
+
+    );
+}
+
+
+function App() {
+    return (
+        <UserProvider>
+            <AppContent/>
+        </UserProvider>
     );
 }
 
